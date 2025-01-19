@@ -5,7 +5,7 @@ import '../../components/styles/DashboardEmployee.css';
 
 function DashboardEmployee() {
   const navigate = useNavigate();
-  const { employeeId } = useParams(); // Extract the 'employeeId' parameter from the URL
+  const { id } = useParams(); // Extract the 'employeeId' parameter from the URL
 
   const handleCardClick = (path) => {
     navigate(path); // Navigate to the provided path
@@ -19,8 +19,8 @@ function DashboardEmployee() {
           {/* Task Card */}
           <div
             className="dashboard-card"
-            onClick={() => handleCardClick(`task-details/${employeeId}`)} // Corrected URL path
-          > {console.log(employeeId)}
+            onClick={() => handleCardClick(`task/${id}`)} // Corrected URL path
+          >
             <h3>Tasks</h3>
             <p>View and manage your tasks efficiently.</p>
           </div>

@@ -6,12 +6,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import API from "../../global.js";
 import { useAuth } from "../../context/Authcontext.js";
-import Usercontext from "../../context/Usercontext.js";
-
 
 function LoginForm() {
   const [auth, setAuth] = useAuth();
-  const userData =useContext(Usercontext)
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,36 +20,42 @@ function LoginForm() {
     },
     validate: (values) => {
       const errors = {};
-      if (!values.email) errors.email = "Please enter an email";
-      if (!values.password) errors.password = "Please enter a password";
+      if (!values.email) errors.email = "Please enter an email.";
+      if (!values.password) errors.password = "Please enter a password.";
       return errors;
     },
     onSubmit: async (values) => {
       try {
         setLoading(true);
         const response = await axios.post(`${API}/api/user/login`, values);
-    //  console.log(response)
-        if (response && response.data.success) {
+
+        if (response?.data?.success) {
+          const { user, token } = response.data;
           toast.success(response.data.message);
+
           setAuth({
             ...auth,
-            user: response.data.user,
-            role:response.data.user,
-            token: response.data.token,
+            user,
+            token,
           });
+
           localStorage.setItem(
             "auth",
             JSON.stringify({
-              ...response.data,
+              user,
+              token,
             })
           );
+
+          // Redirect user after login
           navigate(location.state || "/user-dashboard");
         } else {
-          toast.error(response.data.message);
+          toast.error(response.data.message || "Login failed.");
         }
       } catch (error) {
-        console.error("Error logging in:", error);
-        toast.error("An error occurred while logging in.");
+        const errorMessage =
+          error.response?.data?.message || "An error occurred while logging in.";
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -68,7 +71,7 @@ function LoginForm() {
               <div className="row g-0">
                 <div className="col-md-6 col-lg-5 d-none d-md-block">
                   <img
-                    // src={LoginImage}
+                    // Replace with actual image path
                     alt="login form"
                     className="img-fluid"
                     style={{ borderRadius: "1rem 0 0 1rem" }}
@@ -97,17 +100,10 @@ function LoginForm() {
                           name="email"
                           className="form-control form-control-lg"
                           placeholder="Email address"
-                          value={formik.values.email}
-                          onChange={(e)=>{
-                            userData.setUser({name:e.target.value})
-                          }}
-                          onBlur={formik.handleBlur}
-                           {...formik.getFieldProps("email")}
+                          {...formik.getFieldProps("email")}
                         />
                         {formik.touched.email && formik.errors.email && (
-                          <div className="text-danger">
-                            {formik.errors.email}
-                          </div>
+                          <div className="text-danger">{formik.errors.email}</div>
                         )}
                       </div>
                       <div className="form-outline mb-4">
@@ -117,9 +113,7 @@ function LoginForm() {
                           name="password"
                           className="form-control form-control-lg"
                           placeholder="Password"
-                          value={formik.values.password}
-                          onChange={formik.handleChange}
-                          onBlur={formik.handleBlur}
+                          {...formik.getFieldProps("password")}
                         />
                         {formik.touched.password && formik.errors.password && (
                           <div className="text-danger">

@@ -1,63 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import API from '../../global';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuth } from "../../context/Authcontext.js"; // Update this import path as needed
+import API from "../../global"; // Base API URL
+import { useParams } from "react-router-dom";
 
-const TaskDetailsPage = () => {
-  const { employeeId } = useParams(); // Extract the 'employeeId' parameter from the URL
-  const [tasks, setTasks] = useState([]); // Assuming multiple tasks
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const TaskDetails = () => {
+  const { taskId } = useParams(); // Fetch the taskId from the route params
+  const [task, setTask] = useState(null); // State to store task details
+  const [error, setError] = useState(null); // State to store any errors
+  const [auth] = useAuth(); // Get the auth object from context (contains token and user)
 
   useEffect(() => {
-    const fetchTaskDetails = async () => {
+    const fetchTask = async () => {
       try {
-        const response = await axios.get(`${API}/api/tasks/${employeeId}`, {
+        console.log("Using token:", auth.token); // Debugging the token
+
+        // Make the GET request to fetch task details
+        const response = await axios.get(`${API}/api/tasks/${taskId}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('auth') || ''}`,
+            Authorization: `Bearer ${auth.token}`, // Ensure token is passed correctly
           },
         });
-        console.log(response)
-        setTasks(response.data); // Store task data in state
+
+        console.log("Fetched Task Response:", response.data); // Debugging the response
+        setTask(response.data.task); // Assuming the backend returns { task: { ... } }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch task details.');
-      } finally {
-        setLoading(false);
+        console.error(
+          "Error fetching task:",
+          err.response?.data?.message || err.message
+        );
+        setError(err.response?.data?.message || "Failed to fetch task");
       }
     };
 
-    if (employeeId) fetchTaskDetails(); // Fetch tasks only if employeeId exists
-  }, [employeeId]);
+    // Fetch task only if a token is available
+    if (auth.token) {
+      fetchTask();
+    } else {
+      setError("Authentication token is missing");
+    }
+  }, [taskId, auth.token]);
 
-  if (loading) return <p>Loading task details...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
+  // Render error message if there's an error
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
+  // Show loading indicator while the task is being fetched
+  if (!task) {
+    return <div>Loading...</div>;
+  }
+
+  // Render the task details once fetched
   return (
     <div>
-      <h1>Task Details</h1>
-      {tasks.length > 0 ? (
-        tasks.map((task) => (
-          <div key={task.id} style={{ marginBottom: '1rem' }}>
-            <h2>{task.title}</h2>
-            <p>
-              <strong>Description:</strong> {task.description}
-            </p>
-            <p>
-              <strong>Due Date:</strong> {new Date(task.dueDate).toLocaleDateString()}
-            </p>
-            <p>
-              <strong>Priority:</strong> {task.priority}
-            </p>
-            <p>
-              <strong>Status:</strong> {task.status}
-            </p>
-          </div>
-        ))
-      ) : (
-        <p>No tasks found for this employee.</p>
-      )}
+      <h2>{task.title}</h2>
+      <p>{task.description}</p>
+      <p>
+        <strong>Task ID:</strong> {task.id}
+      </p>
     </div>
   );
 };
 
-export default TaskDetailsPage;
+export default TaskDetails;
